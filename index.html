@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>契約者登録フォーム</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        (function() {
+            const originalWarn = console.warn;
+            console.warn = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+                originalWarn.apply(console, args);
+            };
+        })();
+    </script>
+    
+    <style>
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 3px solid #fff;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        input[type="date"], input[type="datetime-local"] { appearance: none; min-height: 3rem; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans">
+
+    <div class="min-h-screen py-10 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto">
+            
+            <div class="text-center mb-8">
+                <div class="flex justify-center mb-4">
+                    <div class="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-full shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                    </div>
+                </div>
+                <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">契約者登録フォーム</h2>
+            </div>
+
+            <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-slate-200">
+                
+                <div id="success-view" class="hidden p-10 text-center fade-in">
+                    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">登録完了！</h3>
+                    <p id="assigned-id-text" class="hidden text-lg font-bold text-blue-700 mb-2"></p>
+                    <p class="text-slate-600 mb-8 max-w-md mx-auto">Kintoneへの登録とLINE通知が完了しました。</p>
+                    <button onclick="location.reload()" class="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-sm font-bold rounded-full text-white bg-blue-600 hover:bg-blue-700 transition-colors">続けて入力する</button>
+                </div>
+
+                <form id="contract-form" class="divide-y divide-slate-100" onsubmit="handleSubmit(event)">
+                    
+                    <!-- お客様情報 -->
+                    <div class="p-6 sm:p-8 space-y-6">
+                        <h3 class="text-lg font-bold text-slate-900 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            お客様情報
+                        </h3>
+
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">契約種別 <span class="text-red-500">*</span></label>
+                                <select id="contractType" required class="block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm h-12" onchange="updateCustomerIdField()">
+                                    <option value="チラシ">チラシ（001）</option>
+                                    <option value="反響">反響（002）</option>
+                                    <option value="紹介">紹介（003）</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">契約日 <span class="text-red-500">*</span></label>
+                                <input type="date" id="contractDate" required class="block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm h-12">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">契約者名（お客様名） <span class="text-red-500">*</span></label>
+                                <input type="text" id="contractorName" required class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="例：山田 太郎">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">フリガナ <span class="text-red-500">*</span></label>
+                                <input type="text" id="furigana" required class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="例：ヤマダ タロウ">
+                            </div>
+                        </div>
+
+                        <div id="customerIdArea" class="bg-amber-50 p-4 rounded-md border border-amber-200">
+                            <label class="block text-sm font-medium text-amber-900 mb-1">顧客ID <span id="customerIdRequired" class="text-red-500 hidden">*</span></label>
+                            <div class="relative">
+                                <input type="text" id="customerId" autocomplete="off" oninput="onCustomerIdInput()" onfocus="onCustomerIdInput()" class="block w-full border-amber-300 rounded-md shadow-sm py-3 px-3 border" placeholder="IDまたは顧客名で検索">
+                                <div id="customerIdResults" class="hidden absolute z-20 left-0 right-0 mt-1 max-h-72 overflow-y-auto bg-white border border-amber-300 rounded-md shadow-lg"></div>
+                            </div>
+                            <p id="customerIdHint" class="text-xs text-amber-700 mt-1">読み込み中...</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                            <div class="sm:col-span-1">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">郵便番号</label>
+                                <input type="text" id="postalCode" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="123-4567">
+                            </div>
+                            <div class="sm:col-span-1">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">都道府県 <span class="text-red-500">*</span></label>
+                                <select id="prefecture" required class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border">
+                                    <option value="">選択してください</option>
+                                    <option value="北海道">北海道</option>
+                                    <option value="青森県">青森県</option>
+                                    <option value="岩手県">岩手県</option>
+                                    <option value="宮城県">宮城県</option>
+                                    <option value="秋田県">秋田県</option>
+                                    <option value="山形県">山形県</option>
+                                    <option value="福島県">福島県</option>
+                                    <option value="茨城県">茨城県</option>
+                                    <option value="栃木県">栃木県</option>
+                                    <option value="群馬県">群馬県</option>
+                                    <option value="埼玉県">埼玉県</option>
+                                    <option value="千葉県">千葉県</option>
+                                    <option value="東京都">東京都</option>
+                                    <option value="神奈川県">神奈川県</option>
+                                    <option value="新潟県">新潟県</option>
+                                    <option value="富山県">富山県</option>
+                                    <option value="石川県">石川県</option>
+                                    <option value="福井県">福井県</option>
+                                    <option value="山梨県">山梨県</option>
+                                    <option value="長野県">長野県</option>
+                                    <option value="岐阜県">岐阜県</option>
+                                    <option value="静岡県">静岡県</option>
+                                    <option value="愛知県">愛知県</option>
+                                    <option value="三重県">三重県</option>
+                                    <option value="滋賀県">滋賀県</option>
+                                    <option value="京都府">京都府</option>
+                                    <option value="大阪府">大阪府</option>
+                                    <option value="兵庫県">兵庫県</option>
+                                    <option value="奈良県">奈良県</option>
+                                    <option value="和歌山県">和歌山県</option>
+                                    <option value="鳥取県">鳥取県</option>
+                                    <option value="島根県">島根県</option>
+                                    <option value="岡山県">岡山県</option>
+                                    <option value="広島県">広島県</option>
+                                    <option value="山口県">山口県</option>
+                                    <option value="徳島県">徳島県</option>
+                                    <option value="香川県">香川県</option>
+                                    <option value="愛媛県">愛媛県</option>
+                                    <option value="高知県">高知県</option>
+                                    <option value="福岡県">福岡県</option>
+                                    <option value="佐賀県">佐賀県</option>
+                                    <option value="長崎県">長崎県</option>
+                                    <option value="熊本県">熊本県</option>
+                                    <option value="大分県">大分県</option>
+                                    <option value="宮崎県">宮崎県</option>
+                                    <option value="鹿児島県">鹿児島県</option>
+                                    <option value="沖縄県">沖縄県</option>
+                                </select>
+                            </div>
+                            <div class="sm:col-span-3">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">設置場所住所（市区町村以下） <span class="text-red-500">*</span></label>
+                                <input type="text" id="address" required class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="例：千代田区丸の内1-1-1 〇〇マンション101">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">電話番号 <span class="text-red-500">*</span></label>
+                                <input type="tel" id="phone" required class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="090-1234-5678">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">メールアドレス</label>
+                                <input type="email" id="email" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="example@email.com">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">売電先電力会社</label>
+                                <select id="powerCompanyType" class="block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm h-12" onchange="togglePowerCompanyName()">
+                                    <option value="">選択してください</option>
+                                    <option value="東京電力">東京電力</option>
+                                    <option value="新電力">新電力</option>
+                                </select>
+                            </div>
+                            <div id="powerCompanyNameArea" class="hidden">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">電力会社名</label>
+                                <input type="text" id="powerCompanyName" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="例：ENEOSでんき">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- 契約・商材情報 -->
+                    <div class="p-6 sm:p-8 space-y-6 bg-slate-50">
+                        <h3 class="text-lg font-bold text-slate-900 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                            契約・商材情報
+                        </h3>
+
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">支払い方法 <span class="text-red-500">*</span></label>
+                                <select id="paymentMethod" required class="block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm h-12" onchange="togglePaymentDetails()">
+                                    <option value="">選択してください</option>
+                                    <option value="銀行振込">銀行振込</option>
+                                    <option value="銀行ローン">銀行ローン</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">契約金額 (税抜) <span class="text-red-500">*</span></label>
+                                <input type="number" id="contractAmount" required class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border h-12" placeholder="2000000">
+                            </div>
+                        </div>
+
+                        <div id="paymentDetailsArea" class="bg-blue-50 p-4 rounded-md border border-blue-200 hidden">
+                            <div id="payment-loan" class="hidden">
+                                <label class="block text-sm font-medium text-blue-900 mb-1">銀行名 <span class="text-red-500">*</span></label>
+                                <input type="text" id="loanBankName" class="block w-full border-blue-300 rounded-md shadow-sm h-12 px-3" placeholder="例：〇〇銀行">
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="block text-sm font-medium text-slate-700 mb-2">商材情報（複数選択可） <span class="text-red-500">*</span></span>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                <label class="flex items-center p-3 rounded-lg border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition-colors"><input type="checkbox" name="products" value="solar" class="h-4 w-4 text-blue-600 rounded" onchange="toggleDetails()"> <span class="ml-3 text-sm">ソーラーパネル</span></label>
+                                <label class="flex items-center p-3 rounded-lg border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition-colors"><input type="checkbox" name="products" value="battery" class="h-4 w-4 text-blue-600 rounded" onchange="toggleDetails()"> <span class="ml-3 text-sm">蓄電池</span></label>
+                                <label class="flex items-center p-3 rounded-lg border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition-colors"><input type="checkbox" name="products" value="ecocute" class="h-4 w-4 text-blue-600 rounded" onchange="toggleDetails()"> <span class="ml-3 text-sm">エコキュート</span></label>
+                                <label class="flex items-center p-3 rounded-lg border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition-colors"><input type="checkbox" name="products" value="v2h" class="h-4 w-4 text-blue-600 rounded" onchange="toggleDetails()"> <span class="ml-3 text-sm">V2H</span></label>
+                                <label class="flex items-center p-3 rounded-lg border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition-colors"><input type="checkbox" name="products" value="ih" class="h-4 w-4 text-blue-600 rounded" onchange="toggleDetails()"> <span class="ml-3 text-sm">IH</span></label>
+                                <label class="flex items-center p-3 rounded-lg border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition-colors"><input type="checkbox" name="products" value="hems" class="h-4 w-4 text-blue-600 rounded" onchange="toggleDetails()"> <span class="ml-3 text-sm">HEMS</span></label>
+                            </div>
+                        </div>
+
+                        <div id="product-details-container" class="space-y-4 border-t border-slate-200 pt-4 mt-4">
+
+                            <!-- ソーラーパネル詳細 -->
+                            <div id="detail-solar" class="hidden bg-white p-4 rounded-md border border-yellow-200 shadow-sm fade-in">
+                                <h4 class="font-bold text-yellow-700 mb-3">☀️ ソーラーパネル詳細</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div><label class="text-xs text-slate-500">メーカー名</label><input type="text" id="solarManufacturer" class="w-full border p-2 rounded" placeholder="例：Qセルズ"></div>
+                                    <div><label class="text-xs text-slate-500">システム容量 (kW)</label><input type="number" step="0.0001" id="solarCapacity" class="w-full border p-2 rounded" placeholder="例：5.5"></div>
+                                </div>
+                            </div>
+
+                            <!-- 蓄電池詳細（メーカー→型番→容量の順） -->
+                            <div id="detail-battery" class="hidden bg-white p-4 rounded-md border border-green-200 shadow-sm fade-in">
+                                <h4 class="font-bold text-green-700 mb-3">🔋 蓄電池詳細</h4>
+                                <div class="grid grid-cols-1 gap-4">
+                                    <!-- ① メーカー選択 -->
+                                    <div>
+                                        <label class="text-xs text-slate-500">メーカー名</label>
+                                        <select id="batteryManufacturer" class="w-full border p-2 rounded h-10" onchange="updateBatteryModels()">
+                                            <option value="">選択してください</option>
+                                            <option value="DMM">DMM</option>
+                                            <option value="XSOL">XSOL</option>
+                                            <option value="SHARP">SHARP</option>
+                                            <option value="ニチコン">ニチコン</option>
+                                            <option value="住友電工">住友電工</option>
+                                            <option value="長州産業">長州産業</option>
+                                            <option value="リブタワー">リブタワー</option>
+                                            <option value="その他">その他</option>
+                                        </select>
+                                    </div>
+                                    <!-- その他メーカー入力 -->
+                                    <div id="batteryManufacturerOtherArea" class="hidden">
+                                        <label class="text-xs text-slate-500">メーカー名（その他）</label>
+                                        <input type="text" id="batteryManufacturerOther" class="w-full border p-2 rounded" placeholder="メーカー名を入力してください">
+                                    </div>
+                                    <!-- ② 型番プルダウン（メーカー選択後に表示） -->
+                                    <div id="batteryModelArea" class="hidden">
+                                        <label class="text-xs text-slate-500">型番</label>
+                                        <select id="batteryModel" class="w-full border p-2 rounded h-10">
+                                            <option value="">選択してください</option>
+                                        </select>
+                                    </div>
+                                    <!-- その他型番入力 -->
+                                    <div id="batteryModelOtherArea" class="hidden">
+                                        <label class="text-xs text-slate-500">型番（その他）</label>
+                                        <input type="text" id="batteryModelOther" class="w-full border p-2 rounded" placeholder="型番を入力してください">
+                                    </div>
+                                    <!-- ③ 蓄電容量 -->
+                                    <div>
+                                        <label class="text-xs text-slate-500">蓄電容量 (kWh)</label>
+                                        <input type="number" step="0.01" id="batteryCapacity" class="w-full border p-2 rounded" placeholder="例：9.8">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- エコキュート詳細（メーカー→型番→容量の順） -->
+                            <div id="detail-ecocute" class="hidden bg-white p-4 rounded-md border border-blue-200 shadow-sm fade-in">
+                                <h4 class="font-bold text-blue-700 mb-3">💧 エコキュート詳細</h4>
+                                <div class="grid grid-cols-1 gap-4">
+                                    <!-- ① メーカー選択 -->
+                                    <div>
+                                        <label class="text-xs text-slate-500">メーカー名</label>
+                                        <select id="ecoCuteManufacturer" class="w-full border p-2 rounded h-10" onchange="updateEcoCuteModels()">
+                                            <option value="">選択してください</option>
+                                            <option value="コロナ">コロナ</option>
+                                            <option value="その他">その他</option>
+                                        </select>
+                                    </div>
+                                    <!-- その他メーカー入力 -->
+                                    <div id="ecoCuteManufacturerOtherArea" class="hidden">
+                                        <label class="text-xs text-slate-500">メーカー名（その他）</label>
+                                        <input type="text" id="ecoCuteManufacturerOther" class="w-full border p-2 rounded" placeholder="メーカー名を入力してください">
+                                    </div>
+                                    <!-- ② 型番プルダウン（メーカー選択後に表示） -->
+                                    <div id="ecoCuteModelArea" class="hidden">
+                                        <label class="text-xs text-slate-500">型番</label>
+                                        <select id="ecoCuteModel" class="w-full border p-2 rounded h-10">
+                                            <option value="">選択してください</option>
+                                        </select>
+                                    </div>
+                                    <!-- その他型番入力 -->
+                                    <div id="ecoCuteModelOtherArea" class="hidden">
+                                        <label class="text-xs text-slate-500">型番（その他）</label>
+                                        <input type="text" id="ecoCuteModelOther" class="w-full border p-2 rounded" placeholder="型番を入力してください">
+                                    </div>
+                                    <!-- ③ タンク容量 -->
+                                    <div>
+                                        <label class="text-xs text-slate-500">タンク容量 (L)</label>
+                                        <input type="number" id="ecoCuteCapacity" class="w-full border p-2 rounded" placeholder="例：370">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- V2H詳細 -->
+                            <div id="detail-v2h" class="hidden bg-white p-4 rounded-md border border-indigo-200 shadow-sm fade-in">
+                                <h4 class="font-bold text-indigo-700 mb-3">🚗 V2H詳細</h4>
+                                <div><label class="text-xs text-slate-500">メーカー名</label><input type="text" id="v2hManufacturer" class="w-full border p-2 rounded" placeholder="例：ニチコン"></div>
+                            </div>
+
+                            <!-- IH詳細 -->
+                            <div id="detail-ih" class="hidden bg-white p-4 rounded-md border border-red-200 shadow-sm fade-in">
+                                <h4 class="font-bold text-red-700 mb-3">🍳 IH詳細</h4>
+                                <div><label class="text-xs text-slate-500">メーカー名</label><input type="text" id="ihManufacturer" class="w-full border p-2 rounded" placeholder="例：パナソニック"></div>
+                            </div>
+
+                            <!-- HEMS詳細 -->
+                            <div id="detail-hems" class="hidden bg-white p-4 rounded-md border border-teal-200 shadow-sm fade-in">
+                                <h4 class="font-bold text-teal-700 mb-3">📊 HEMS詳細</h4>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="text-xs text-slate-500">メーカー名</label>
+                                        <select id="hemsManufacturer" class="w-full border p-2 rounded h-10" onchange="toggleHemsOther()">
+                                            <option value="">選択してください</option>
+                                            <option value="CUBE J">CUBE J</option>
+                                            <option value="SHARP">SHARP</option>
+                                            <option value="Shizen Connect">Shizen Connect</option>
+                                            <option value="その他">その他</option>
+                                        </select>
+                                    </div>
+                                    <!-- その他メーカー入力 -->
+                                    <div id="hemsManufacturerOtherArea" class="hidden">
+                                        <label class="text-xs text-slate-500">メーカー名（その他）</label>
+                                        <input type="text" id="hemsManufacturerOther" class="w-full border p-2 rounded" placeholder="メーカー名を入力してください">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 延長保証 -->
+                        <div class="mt-4 border-t border-slate-200 pt-4">
+                            <label class="flex items-center p-3 rounded-lg border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition-colors">
+                                <input type="checkbox" id="hasExtendedWarranty" class="h-4 w-4 text-green-600 rounded" onchange="toggleWarranty()">
+                                <span class="ml-3 text-sm font-medium text-slate-700">延長保証あり</span>
+                            </label>
+                            <div id="warrantyArea" class="hidden mt-3 bg-green-50 p-4 rounded-md border border-green-200 fade-in">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-green-900 mb-1">メーカー延長保証</label>
+                                        <select id="makerWarranty" class="block w-full py-2 px-3 border border-green-300 bg-white rounded-md shadow-sm h-12">
+                                            <option value="">選択してください</option>
+                                            <option value="5年">5年</option>
+                                            <option value="10年">10年</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-green-900 mb-1">ワランティ延長保証</label>
+                                        <select id="warrantyExtension" class="block w-full py-2 px-3 border border-green-300 bg-white rounded-md shadow-sm h-12">
+                                            <option value="">選択してください</option>
+                                            <option value="5年">5年</option>
+                                            <option value="10年">10年</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 補助金情報 -->
+                        <div class="mt-4 border-t border-slate-200 pt-4">
+                            <span class="block text-sm font-medium text-slate-700 mb-2">補助金情報（複数選択可）</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <label class="flex items-center p-2 rounded-lg border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition-colors"><input type="checkbox" name="subsidies" value="東京都太陽光補助金" class="h-4 w-4 text-orange-600 rounded"><span class="ml-3 text-sm">東京都太陽光補助金</span></label>
+                                <div class="flex flex-col gap-1">
+                                    <label class="flex items-center p-2 rounded-lg border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition-colors"><input type="checkbox" id="tokyoBatterySubsidyCheck" name="subsidies" value="東京都蓄電池補助金" class="h-4 w-4 text-orange-600 rounded" onchange="toggleDrJissho()"><span class="ml-3 text-sm">東京都蓄電池補助金</span></label>
+                                    <!-- 東京都DR実証（東京都蓄電池補助金選択時のみ表示） -->
+                                    <div id="drJisshoArea" class="hidden ml-2 p-2 bg-orange-50 rounded-lg border border-orange-200">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" id="drJisshoCheck" name="drJissho" value="東京都DR実証" class="h-4 w-4 text-orange-600 rounded" onchange="updateDrJisshoNote(this.checked)">
+                                            <span class="text-sm text-orange-800">東京都DR実証</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <label class="flex items-center p-2 rounded-lg border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition-colors"><input type="checkbox" name="subsidies" value="東京都エコキュート補助金" class="h-4 w-4 text-orange-600 rounded"><span class="ml-3 text-sm">東京都エコキュート補助金</span></label>
+                                <label class="flex items-center p-2 rounded-lg border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition-colors"><input type="checkbox" name="subsidies" value="給湯省エネ補助金" class="h-4 w-4 text-orange-600 rounded"><span class="ml-3 text-sm">給湯省エネ補助金</span></label>
+                                <label class="flex items-center p-2 rounded-lg border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition-colors"><input type="checkbox" id="municipalSubsidyCheck" name="subsidies" value="市区町村補助金" class="h-4 w-4 text-orange-600 rounded" onchange="toggleMunicipalSubsidy()"><span class="ml-3 text-sm">市区町村補助金</span></label>
+                            </div>
+
+                            <div id="municipalSubsidyArea" class="hidden mt-3 space-y-2">
+                                <label class="block text-sm font-medium text-slate-700">市区町村補助金（対象地域を記入）</label>
+                                <div id="municipalSubsidyList" class="space-y-2">
+                                    <div class="flex items-center gap-2 municipal-entry">
+                                        <input type="text" class="municipal-input block w-full border-slate-300 rounded-md shadow-sm py-2 px-3 border" placeholder="例：東京都世田谷区" oninput="updateMunicipalNote()">
+                                        <button type="button" onclick="removeMunicipalEntry(this)" class="hidden flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors remove-btn">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="addMunicipalEntry()" class="mt-1 inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    市区町村を追加
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 写真アップロード -->
+                    <div class="p-6 sm:p-8 space-y-6 bg-slate-50">
+                        <h3 class="text-lg font-bold text-slate-900 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-pink-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            書類アップロード
+                        </h3>
+                        <p class="text-xs text-slate-500">※ 写真はGoogleドライブのお客様フォルダに自動保存されます</p>
+
+                        <!-- 契約書 -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-slate-700">契約書</label>
+                            <div id="contractFileList" class="space-y-2"></div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border border-dashed border-slate-400 bg-white hover:bg-slate-50 text-sm text-slate-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                ファイルを追加
+                                <input type="file" class="hidden" accept="image/*,.pdf" multiple onchange="addFiles(this, 'contractFiles', 'contractFileList', '契約書')">
+                            </label>
+                        </div>
+
+                        <!-- 身分証 -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-slate-700">身分証</label>
+                            <div id="idFileList" class="space-y-2"></div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border border-dashed border-slate-400 bg-white hover:bg-slate-50 text-sm text-slate-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                ファイルを追加
+                                <input type="file" class="hidden" accept="image/*,.pdf" multiple onchange="addFiles(this, 'idFiles', 'idFileList', '身分証')">
+                            </label>
+                        </div>
+
+                        <!-- 通帳写真 -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-slate-700">通帳写真</label>
+                            <div id="bankFileList" class="space-y-2"></div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border border-dashed border-slate-400 bg-white hover:bg-slate-50 text-sm text-slate-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                ファイルを追加
+                                <input type="file" class="hidden" accept="image/*,.pdf" multiple onchange="addFiles(this, 'bankFiles', 'bankFileList', '通帳写真')">
+                            </label>
+                        </div>
+
+                        <!-- その他書類 -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-slate-700">その他書類</label>
+                            <p class="text-xs text-slate-400">東京都補助金同意書など</p>
+                            <div id="otherFileList" class="space-y-2"></div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border border-dashed border-slate-400 bg-white hover:bg-slate-50 text-sm text-slate-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                ファイルを追加
+                                <input type="file" class="hidden" accept="image/*,.pdf" multiple onchange="addFiles(this, 'otherFiles', 'otherFileList', 'その他書類')">
+                            </label>
+                        </div>
+
+                        <!-- 割付図 -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-slate-700">割付図</label>
+                            <div id="layoutFileList" class="space-y-2"></div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border border-dashed border-slate-400 bg-white hover:bg-slate-50 text-sm text-slate-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                ファイルを追加
+                                <input type="file" class="hidden" accept="image/*,.pdf" multiple onchange="addFiles(this, 'layoutFiles', 'layoutFileList', '割付図')">
+                            </label>
+                        </div>
+
+                        <!-- 見積書 -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-slate-700">見積書</label>
+                            <div id="quoteFileList" class="space-y-2"></div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border border-dashed border-slate-400 bg-white hover:bg-slate-50 text-sm text-slate-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                ファイルを追加
+                                <input type="file" class="hidden" accept="image/*,.pdf" multiple onchange="addFiles(this, 'quoteFiles', 'quoteFileList', '見積書')">
+                            </label>
+                        </div>
+
+                        <!-- 電力情報 -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-slate-700">電力情報</label>
+                            <div id="powerInfoFileList" class="space-y-2"></div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border border-dashed border-slate-400 bg-white hover:bg-slate-50 text-sm text-slate-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                ファイルを追加
+                                <input type="file" class="hidden" accept="image/*,.pdf" multiple onchange="addFiles(this, 'powerInfoFiles', 'powerInfoFileList', '電力情報')">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 担当・施工情報 -->
+                    <div class="p-6 sm:p-8 space-y-6">
+                        <h3 class="text-lg font-bold text-slate-900 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-indigo-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                            担当・施工情報
+                        </h3>
+
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">AP担当者名 <span class="text-red-500">*</span></label>
+                                <input type="text" id="apStaffName" required class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="アポインター名">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">CL担当者名 <span class="text-red-500">*</span></label>
+                                <input type="text" id="clStaffName" required class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="クローザー名">
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-200 my-4"></div>
+
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <div class="flex justify-between items-end mb-1">
+                                    <label class="block text-sm font-medium text-slate-700 flex items-center">現調日 (日時)</label>
+                                    <div class="flex items-center pb-0.5">
+                                        <input type="checkbox" id="isSurveyUndecided" class="h-4 w-4 text-indigo-600 rounded" onchange="toggleSurveyDate()">
+                                        <label for="isSurveyUndecided" class="ml-2 block text-xs text-slate-500 cursor-pointer whitespace-nowrap">未定の場合はチェック</label>
+                                    </div>
+                                </div>
+                                <input type="datetime-local" id="surveyDate" class="block w-full border-slate-300 rounded-md shadow-sm border py-2 px-3 h-12">
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-end mb-1">
+                                    <label class="block text-sm font-medium text-slate-700">施工日</label>
+                                    <div class="flex items-center pb-0.5">
+                                        <input type="checkbox" id="isConstructionUndecided" class="h-4 w-4 text-indigo-600 rounded" onchange="toggleConstructionDate()">
+                                        <label for="isConstructionUndecided" class="ml-2 block text-xs text-slate-500 cursor-pointer whitespace-nowrap">未定の場合はチェック</label>
+                                    </div>
+                                </div>
+                                <input type="date" id="constructionDate" class="block w-full border-slate-300 rounded-md shadow-sm border py-2 px-3 h-12">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">担当施工店</label>
+                            <select id="constructionShop" class="block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm h-12">
+                                <option value="">選択してください</option>
+                                <option value="BALOCKX">BALOCKX</option>
+                                <option value="その他">その他(※備考欄に記述)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">備考・特記事項</label>
+                            <div class="mt-1">
+                                <textarea id="notes" rows="4" class="shadow-sm block w-full sm:text-sm border border-slate-300 rounded-md p-3" placeholder="その他連絡事項があれば入力してください"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="error-message" class="hidden p-4 bg-red-50">
+                        <div class="flex">
+                            <div class="flex-shrink-0"><svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></div>
+                            <div class="ml-3"><h3 class="text-sm font-medium text-red-800">エラーが発生しました</h3><div id="error-text" class="mt-2 text-sm text-red-700"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-8 bg-slate-50 sm:px-10 flex justify-end rounded-b-2xl">
+                        <button type="submit" id="submit-btn" class="w-full sm:w-auto inline-flex justify-center items-center py-4 px-12 border border-transparent shadow-lg text-lg font-bold rounded-full text-white bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all transform hover:scale-105 active:scale-95">
+                            <span id="btn-text">契約を確定・報告する</span>
+                            <div id="btn-loading" class="hidden spinner ml-2"></div>
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+            
+            <div class="mt-8 text-center"><p class="text-xs text-slate-400 font-medium">営業管理システム © 2026 Solar Sales Co.</p></div>
+        </div>
+    </div>
+
+    <script>
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw27UsH925fO-jbV2bDMMzbMa8KDcV6doa-b9b3gB_Me3rqwD-vu-ZHuvVAJQ0v61Hk0A/exec"; // ★転用時に新しいGASのURLを設定
+
+        // =========================================================
+        // ★ 蓄電池・エコキュート 型番マスター
+        // =========================================================
+        const BATTERY_MODELS = {
+            'DMM':    ['4.95-5N-DM','4.95-10N-DM','4.95-15N-DM','4.95-7N-DM','4.95-14N-DM','4.95-21N-DM'],
+            'XSOL':   ['4.95-5-N-XSOL','4.95-10-N-XSOL','4.95-15-N-XSOL','4.95-7-N-XSOL','4.95-14-N-XSOL','4.95-21-N-XSOL'],
+            'SHARP':  ['JH-WBPDD988','JH-WBPDC988','JH-WBPDD880','JH-WBPDC880','JH-WBPDB777','JH-WBPDA777'],
+            'ニチコン': ['ES-T5','ES-T6'],
+            '住友電工': ['PDH-6000S01A'],
+            '長州産業': ['CB-P63M06A','CB-P98M06A','CB-P127M06A','CB-P164M06A'],
+            'リブタワー': ['ESS-T5MGCK','ESS-T6MGCK','ESS-T5XGCK','ESS-T6XGCK'],
+        };
+
+        const ECOCUTE_MODELS = {
+            'コロナ': ['CHP-E37AZ2','CHP-E46AZ2','CHP-ES46AZ2','CHP-37AZ2','CHP-46AZ2'],
+        };
+
+        // 蓄電池：メーカー変更時に型番プルダウンを更新
+        function updateBatteryModels() {
+            const maker = document.getElementById('batteryManufacturer').value;
+            const modelArea = document.getElementById('batteryModelArea');
+            const modelSelect = document.getElementById('batteryModel');
+            const otherMakerArea = document.getElementById('batteryManufacturerOtherArea');
+            const otherModelArea = document.getElementById('batteryModelOtherArea');
+
+            // リセット
+            modelSelect.innerHTML = '<option value="">選択してください</option>';
+            modelArea.classList.add('hidden');
+            otherMakerArea.classList.add('hidden');
+            otherModelArea.classList.add('hidden');
+
+            if (maker === 'その他') {
+                otherMakerArea.classList.remove('hidden');
+                otherModelArea.classList.remove('hidden');
+            } else if (maker && BATTERY_MODELS[maker]) {
+                BATTERY_MODELS[maker].forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = m;
+                    modelSelect.appendChild(opt);
+                });
+                modelArea.classList.remove('hidden');
+            }
+        }
+
+        // エコキュート：メーカー変更時に型番プルダウンを更新
+        function updateEcoCuteModels() {
+            const maker = document.getElementById('ecoCuteManufacturer').value;
+            const modelArea = document.getElementById('ecoCuteModelArea');
+            const modelSelect = document.getElementById('ecoCuteModel');
+            const otherMakerArea = document.getElementById('ecoCuteManufacturerOtherArea');
+            const otherModelArea = document.getElementById('ecoCuteModelOtherArea');
+
+            // リセット
+            modelSelect.innerHTML = '<option value="">選択してください</option>';
+            modelArea.classList.add('hidden');
+            otherMakerArea.classList.add('hidden');
+            otherModelArea.classList.add('hidden');
+
+            if (maker === 'その他') {
+                otherMakerArea.classList.remove('hidden');
+                otherModelArea.classList.remove('hidden');
+            } else if (maker && ECOCUTE_MODELS[maker]) {
+                ECOCUTE_MODELS[maker].forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = m;
+                    modelSelect.appendChild(opt);
+                });
+                modelArea.classList.remove('hidden');
+            }
+        }
+
+        // =========================================================
+        // 既存の関数
+        // =========================================================
+        window.onload = function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('contractDate').value = today;
+            updateCustomerIdField(); // 初期表示（読み込み中の状態を表示）
+            if (!GAS_WEB_APP_URL.includes("ここにGAS")) loadFormData(); // URL設定後のみ顧客リスト・次番号を取得
+
+            // 候補リスト外をタップしたら閉じる
+            document.getElementById('customerId').addEventListener('blur', function () {
+                setTimeout(() => {
+                    const box = document.getElementById('customerIdResults');
+                    if (box) box.classList.add('hidden');
+                }, 200);
+            });
+        };
+
+        // =========================================================
+        // ファイル管理
+        // =========================================================
+        const fileStore = { contractFiles: [], idFiles: [], bankFiles: [], otherFiles: [], layoutFiles: [], quoteFiles: [], powerInfoFiles: [] };
+
+        function addFiles(input, storeKey, listId, label) {
+            const files = Array.from(input.files);
+            files.forEach(file => {
+                fileStore[storeKey].push(file);
+            });
+            renderFileList(storeKey, listId, label);
+            input.value = ''; // 同じファイルを再選択できるようリセット
+        }
+
+        function removeFile(storeKey, listId, label, index) {
+            fileStore[storeKey].splice(index, 1);
+            renderFileList(storeKey, listId, label);
+        }
+
+        function renderFileList(storeKey, listId, label) {
+            const list = document.getElementById(listId);
+            list.innerHTML = '';
+            fileStore[storeKey].forEach((file, i) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-2 p-2 bg-white rounded-lg border border-slate-200 text-sm';
+                div.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span class="flex-1 truncate text-slate-700">${file.name}</span>
+                    <span class="text-xs text-slate-400">${(file.size/1024).toFixed(0)}KB</span>
+                    <button type="button" onclick="removeFile('${storeKey}', '${listId}', '${label}', ${i})" class="text-slate-400 hover:text-red-500 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>`;
+                list.appendChild(div);
+            });
+        }
+
+        async function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve({
+                    name: file.name,
+                    type: file.type,
+                    data: reader.result.split(',')[1]
+                });
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // =========================================================
+        // DR実証トグル
+        // =========================================================
+        function toggleDrJissho() {
+            const checked = document.getElementById('tokyoBatterySubsidyCheck').checked;
+            const area = document.getElementById('drJisshoArea');
+            if (checked) {
+                area.classList.remove('hidden');
+            } else {
+                area.classList.add('hidden');
+                document.getElementById('drJisshoCheck').checked = false;
+                updateDrJisshoNote(false);
+            }
+        }
+
+        function updateDrJisshoNote(isDrChecked) {
+            const notes = document.getElementById('notes');
+            const marker = '東京都DR実証予定';
+            if (isDrChecked) {
+                if (!notes.value.includes(marker)) {
+                    notes.value = notes.value
+                        ? notes.value.trimEnd() + '\n' + marker
+                        : marker;
+                }
+            } else {
+                notes.value = notes.value
+                    .split('\n')
+                    .filter(line => line.trim() !== marker)
+                    .join('\n')
+                    .trimEnd();
+            }
+        }
+
+        function toggleMunicipalSubsidy() {
+            const checked = document.getElementById('municipalSubsidyCheck').checked;
+            const area = document.getElementById('municipalSubsidyArea');
+            if (checked) {
+                area.classList.remove('hidden');
+            } else {
+                area.classList.add('hidden');
+                // チェックを外したら入力欄をリセット（1つだけ残す）
+                const list = document.getElementById('municipalSubsidyList');
+                list.innerHTML = `<div class="flex items-center gap-2 municipal-entry">
+                    <input type="text" class="municipal-input block w-full border-slate-300 rounded-md shadow-sm py-2 px-3 border" placeholder="例：東京都世田谷区" oninput="updateMunicipalNote()">
+                    <button type="button" onclick="removeMunicipalEntry(this)" class="hidden flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors remove-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>`;
+                updateMunicipalNote();
+            }
+        }
+
+        function addMunicipalEntry() {
+            const list = document.getElementById('municipalSubsidyList');
+            const entry = document.createElement('div');
+            entry.className = 'flex items-center gap-2 municipal-entry';
+            entry.innerHTML = `
+                <input type="text" class="municipal-input block w-full border-slate-300 rounded-md shadow-sm py-2 px-3 border" placeholder="例：神奈川県川崎市" oninput="updateMunicipalNote()">
+                <button type="button" onclick="removeMunicipalEntry(this)" class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors remove-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>`;
+            list.appendChild(entry);
+            // 2件以上になったら全削除ボタンを表示
+            updateRemoveButtons();
+        }
+
+        function removeMunicipalEntry(btn) {
+            const entry = btn.closest('.municipal-entry');
+            entry.remove();
+            updateRemoveButtons();
+            updateMunicipalNote();
+        }
+
+        function updateRemoveButtons() {
+            const entries = document.querySelectorAll('.municipal-entry');
+            entries.forEach(entry => {
+                const btn = entry.querySelector('.remove-btn');
+                if (btn) btn.classList.toggle('hidden', entries.length <= 1);
+            });
+        }
+
+        function getMunicipalSubsidyTexts() {
+            return Array.from(document.querySelectorAll('.municipal-input'))
+                .map(input => input.value.trim())
+                .filter(v => v !== '');
+        }
+
+        function updateMunicipalNote() {
+            const notes = document.getElementById('notes');
+            const prefix = '市区町村補助金：';
+            // 既存の市区町村補助金行を削除し、空行も詰める
+            const lines = notes.value.split('\n')
+                .filter(line => !line.startsWith(prefix))
+                .map(line => line.trimEnd());
+            // 末尾の空行を除去
+            while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+            // 先頭の空行を除去
+            while (lines.length > 0 && lines[0] === '') lines.shift();
+            // 現在の入力値を取得して追記
+            const areas = getMunicipalSubsidyTexts();
+            if (areas.length > 0) {
+                if (lines.length > 0) lines.push('');
+                lines.push(prefix + areas.join('、'));
+            }
+            notes.value = lines.join('\n');
+        }
+
+        function togglePowerCompanyName() {
+            const type = document.getElementById('powerCompanyType').value;
+            const nameArea = document.getElementById('powerCompanyNameArea');
+            if (type === '新電力') {
+                nameArea.classList.remove('hidden');
+            } else {
+                nameArea.classList.add('hidden');
+                document.getElementById('powerCompanyName').value = '';
+            }
+        }
+
+        // 顧客ID関連（催事＝予測入力 / 訪販・アライアンス＝次番号を自動補完）
+        let customerList = [];
+        let nextIdMap = {};       // 例: { '自社【訪販】': '0100148', '自社【アライアンス】': '0300064' }
+        let formDataLoaded = false;
+        let selectedCustomerId = ''; // 催事販売で選択された顧客ID
+
+        // タイムアウト + リトライ付き fetch（接続不安定対策）
+        async function fetchWithRetry(url, opts = {}, retries = 3, timeoutMs = 20000) {
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), timeoutMs);
+                try {
+                    const res = await fetch(url, { ...opts, signal: controller.signal });
+                    clearTimeout(timer);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res;
+                } catch (err) {
+                    clearTimeout(timer);
+                    if (attempt === retries) throw err;
+                    // 1秒 → 2秒 → 4秒 と待ってから再試行
+                    await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+                }
+            }
+        }
+
+        // GASから顧客リストと次番号を取得（sessionStorageキャッシュ + リトライ）
+        async function loadFormData() {
+            const hint = document.getElementById('customerIdHint');
+
+            // ① まずブラウザキャッシュ（当日分）を利用して即時表示
+            try {
+                const cached = JSON.parse(sessionStorage.getItem('customerListCache') || 'null');
+                if (cached && Array.isArray(cached.customers) && cached.customers.length > 0) {
+                    customerList = cached.customers;
+                    formDataLoaded = true;
+                    updateCustomerIdField();
+                }
+            } catch (e) { /* キャッシュ不正時は無視 */ }
+
+            // ② サーバから最新を取得（次番号は毎回最新が必要）
+            try {
+                const res = await fetchWithRetry(GAS_WEB_APP_URL);
+                const json = await res.json();
+                if (Array.isArray(json.customers) && json.customers.length > 0) {
+                    customerList = json.customers;
+                    try {
+                        sessionStorage.setItem('customerListCache', JSON.stringify({ customers: json.customers }));
+                    } catch (e) { /* 保存失敗は無視 */ }
+                }
+                nextIdMap = json.nextIds || {};
+                formDataLoaded = true;
+            } catch (err) {
+                // 通信失敗。キャッシュがあればそれを使い続ける
+                if (!formDataLoaded && hint) {
+                    hint.textContent = 'データの読み込みに失敗しました。時間をおいて再読み込みしてください。';
+                }
+            }
+            updateCustomerIdField();
+        }
+
+        // HTMLエスケープ
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+
+        // 顧客ID入力時の候補表示（名前・IDの部分一致で該当者を全員表示）
+        function onCustomerIdInput() {
+            const type = document.getElementById('contractType').value;
+            const box = document.getElementById('customerIdResults');
+            if (type !== '自社【AEON】') { box.classList.add('hidden'); return; }
+
+            const input = document.getElementById('customerId');
+            const q = input.value.trim().toLowerCase();
+            selectedCustomerId = ''; // 入力が変わったら選択解除
+
+            if (!q) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+
+            const matches = customerList.filter(c =>
+                (c.name && c.name.toLowerCase().includes(q)) ||
+                (c.id && c.id.toLowerCase().includes(q))
+            );
+
+            if (matches.length === 0) {
+                box.innerHTML = '<div class="px-3 py-2 text-sm text-slate-400">該当する顧客が見つかりません</div>';
+                box.classList.remove('hidden');
+                return;
+            }
+
+            const MAX = 300; // 表示上限
+            const shown = matches.slice(0, MAX);
+            box.innerHTML = shown.map(c =>
+                `<div class="customer-option px-3 py-3 text-sm border-b border-slate-100 cursor-pointer hover:bg-amber-50 active:bg-amber-100" data-id="${escapeHtml(c.id)}" data-label="${escapeHtml(c.id + ' ' + c.name)}"><span class="text-slate-400">${escapeHtml(c.id)}</span>　${escapeHtml(c.name)}</div>`
+            ).join('') + (matches.length > MAX ? `<div class="px-3 py-2 text-xs text-slate-400">他 ${matches.length - MAX} 件… さらに絞り込んでください</div>` : '');
+            box.classList.remove('hidden');
+
+            box.querySelectorAll('.customer-option').forEach(el => {
+                // mousedownでinputのblurより先に選択を確定
+                el.addEventListener('mousedown', function (ev) {
+                    ev.preventDefault();
+                    input.value = this.getAttribute('data-label');
+                    selectedCustomerId = this.getAttribute('data-id');
+                    box.classList.add('hidden');
+                });
+            });
+        }
+
+        // 契約種別に応じて顧客ID欄を切り替える
+        function updateCustomerIdField() {
+            const type = document.getElementById('contractType').value;
+            const input = document.getElementById('customerId');
+            const hint = document.getElementById('customerIdHint');
+            const required = document.getElementById('customerIdRequired');
+
+            // 種別が変わったら選択と候補リストをリセット
+            selectedCustomerId = '';
+            const resultsBox = document.getElementById('customerIdResults');
+            if (resultsBox) { resultsBox.classList.add('hidden'); resultsBox.innerHTML = ''; }
+
+            // チラシ／反響／紹介：契約種別ごとに顧客IDを順番に自動採番（編集不可）
+            input.readOnly = true;
+            input.classList.add('bg-slate-100', 'cursor-not-allowed');
+            input.placeholder = '';
+            required.classList.add('hidden');
+            const nextId = nextIdMap[type];
+            if (nextId) {
+                input.value = nextId;
+                hint.textContent = '送信時に自動採番されます（プレビュー）。';
+            } else {
+                input.value = '';
+                hint.textContent = formDataLoaded ? '送信時に自動採番されます。' : '次番号を読み込み中...';
+            }
+        }
+
+        // 入力値から正しい顧客IDを特定する
+        function resolveCustomerId(raw) {
+            raw = (raw || '').trim();
+            if (!raw) return '';
+            let m = customerList.find(c => `${c.id} ${c.name}` === raw);
+            if (m) return m.id;
+            m = customerList.find(c => c.id === raw);
+            if (m) return m.id;
+            const idPart = raw.split(/\s+/)[0];
+            m = customerList.find(c => c.id === idPart);
+            if (m) return m.id;
+            return '';
+        }
+
+        function toggleDetails() {
+            document.querySelectorAll('input[name="products"]').forEach(cb => {
+                const detailEl = document.getElementById('detail-' + cb.value);
+                if (detailEl) cb.checked ? detailEl.classList.remove('hidden') : detailEl.classList.add('hidden');
+            });
+        }
+
+        function toggleWarranty() {
+            const checked = document.getElementById('hasExtendedWarranty').checked;
+            const area = document.getElementById('warrantyArea');
+            if (checked) {
+                area.classList.remove('hidden');
+            } else {
+                area.classList.add('hidden');
+                document.getElementById('makerWarranty').value = '';
+                document.getElementById('warrantyExtension').value = '';
+            }
+        }
+
+        function toggleHemsOther() {
+            const val = document.getElementById('hemsManufacturer').value;
+            const area = document.getElementById('hemsManufacturerOtherArea');
+            if (val === 'その他') {
+                area.classList.remove('hidden');
+            } else {
+                area.classList.add('hidden');
+                document.getElementById('hemsManufacturerOther').value = '';
+            }
+        }
+
+        function toggleSurveyDate() {
+            const checkbox = document.getElementById('isSurveyUndecided');
+            const input = document.getElementById('surveyDate');
+            input.disabled = checkbox.checked;
+            if (checkbox.checked) {
+                input.classList.add('bg-slate-100', 'cursor-not-allowed');
+                input.value = '';
+            } else {
+                input.classList.remove('bg-slate-100', 'cursor-not-allowed');
+            }
+        }
+
+        function toggleConstructionDate() {
+            const checkbox = document.getElementById('isConstructionUndecided');
+            const input = document.getElementById('constructionDate');
+            input.disabled = checkbox.checked;
+            if (checkbox.checked) {
+                input.classList.add('bg-slate-100', 'cursor-not-allowed');
+                input.value = '';
+            } else {
+                input.classList.remove('bg-slate-100', 'cursor-not-allowed');
+            }
+        }
+
+        function togglePaymentDetails() {
+            const method = document.getElementById('paymentMethod').value;
+            const container = document.getElementById('paymentDetailsArea');
+            const loan = document.getElementById('payment-loan');
+
+            container.classList.add('hidden');
+            loan.classList.add('hidden');
+
+            // 銀行ローンのときだけ銀行名（フリーテキスト）を表示。銀行振込は入金予定日欄なし。
+            if (method === '銀行ローン') {
+                container.classList.remove('hidden'); loan.classList.remove('hidden');
+            }
+        }
+
+        // =========================================================
+        // フォーム送信
+        // =========================================================
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const btnLoading = document.getElementById('btn-loading');
+            const btnText = document.getElementById('btn-text');
+            const errorMessageDiv = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ここにGAS")) {
+                alert("GASのURLを設定してください。");
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+            btnText.textContent = "送信中...";
+            btnLoading.classList.remove('hidden');
+            errorMessageDiv.classList.add('hidden');
+
+            try {
+                const selectedProducts = [];
+                document.querySelectorAll('input[name="products"]:checked').forEach(cb => selectedProducts.push(cb.value));
+
+                const selectedSubsidies = [];
+                document.querySelectorAll('input[name="subsidies"]:checked').forEach(cb => selectedSubsidies.push(cb.value));
+                const isDrJissho = document.getElementById('drJisshoCheck').checked;
+
+                const paymentMethod = document.getElementById('paymentMethod').value;
+                let loanBankName = '';
+                if (paymentMethod === '銀行ローン') {
+                    loanBankName = document.getElementById('loanBankName').value;
+                }
+
+                // ★ 蓄電池：メーカー・型番の取得（その他対応）
+                const batteryMakerSelected = document.getElementById('batteryManufacturer').value;
+                const batteryManufacturer = batteryMakerSelected === 'その他'
+                    ? document.getElementById('batteryManufacturerOther').value
+                    : batteryMakerSelected;
+                const batteryModel = batteryMakerSelected === 'その他'
+                    ? document.getElementById('batteryModelOther').value
+                    : document.getElementById('batteryModel').value;
+
+                // ★ エコキュート：メーカー・型番の取得（その他対応）
+                const ecoCuteMakerSelected = document.getElementById('ecoCuteManufacturer').value;
+                const ecoCuteManufacturer = ecoCuteMakerSelected === 'その他'
+                    ? document.getElementById('ecoCuteManufacturerOther').value
+                    : ecoCuteMakerSelected;
+                const ecoCuteModel = ecoCuteMakerSelected === 'その他'
+                    ? document.getElementById('ecoCuteModelOther').value
+                    : document.getElementById('ecoCuteModel').value;
+
+                // ★ HEMS：メーカーの取得（その他対応）
+                const hemsMakerSelected = document.getElementById('hemsManufacturer').value;
+                const hemsManufacturer = hemsMakerSelected === 'その他'
+                    ? document.getElementById('hemsManufacturerOther').value
+                    : hemsMakerSelected;
+
+                // 催事販売の場合は顧客IDを特定
+                const contractTypeVal = document.getElementById('contractType').value;
+                let customerId = '';
+                if (contractTypeVal === '自社【AEON】') {
+                    // 候補から選択された値を優先。未選択なら入力文字列から特定
+                    customerId = selectedCustomerId || resolveCustomerId(document.getElementById('customerId').value);
+                }
+
+                // バリデーション
+                const validationErrors = [];
+                if (contractTypeVal === '自社【AEON】' && !customerId) validationErrors.push('催事販売の場合、「顧客ID」をリストから選択してください。');
+                if (selectedProducts.length === 0) validationErrors.push('「商材情報」を1つ以上選択してください。');
+                if (paymentMethod === '銀行ローン' && !loanBankName.trim()) validationErrors.push('支払い方法が「銀行ローン」の場合、「銀行名」を入力してください。');
+                if (document.getElementById('powerCompanyType').value === '新電力' && !document.getElementById('powerCompanyName').value.trim()) {
+                    validationErrors.push('売電先が「新電力」の場合、「電力会社名」を入力してください。');
+                }
+                // 延長保証あり → メーカー/ワランティのどちらか年数選択が必須
+                if (document.getElementById('hasExtendedWarranty').checked
+                    && !document.getElementById('makerWarranty').value
+                    && !document.getElementById('warrantyExtension').value) {
+                    validationErrors.push('延長保証ありの場合、「メーカー延長保証」または「ワランティ延長保証」のいずれかの年数を選択してください。');
+                }
+
+                if (validationErrors.length > 0) {
+                    errorText.innerHTML = validationErrors.map(e => `・${e}`).join('<br>');
+                    errorMessageDiv.classList.remove('hidden');
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                    btnText.textContent = "契約を確定・報告する";
+                    btnLoading.classList.add('hidden');
+                    errorMessageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                }
+
+                const data = {
+                    contractType: document.getElementById('contractType').value,
+                    contractDate: document.getElementById('contractDate').value,
+                    contractorName: document.getElementById('contractorName').value,
+                    furigana: document.getElementById('furigana').value,
+                    postalCode: document.getElementById('postalCode').value,
+                    address: document.getElementById('prefecture').value + document.getElementById('address').value,
+                    prefecture: document.getElementById('prefecture').value,
+                    phone: document.getElementById('phone').value,
+                    email: document.getElementById('email').value,
+                    customerId: customerId,
+                    powerPurchaser: document.getElementById('powerCompanyType').value,
+                    powerCompanyName: document.getElementById('powerCompanyName').value,
+                    paymentMethod,
+                    loanBankName,
+                    contractAmount: document.getElementById('contractAmount').value,
+                    selectedProducts,
+                    subsidies: selectedSubsidies,
+                    solarManufacturer: document.getElementById('solarManufacturer').value,
+                    solarCapacity: document.getElementById('solarCapacity').value,
+                    // ★ 蓄電池（型番追加）
+                    batteryManufacturer,
+                    batteryModel,
+                    batteryCapacity: document.getElementById('batteryCapacity').value,
+                    // ★ エコキュート（型番追加）
+                    ecoCuteManufacturer,
+                    ecoCuteModel,
+                    ecoCuteCapacity: document.getElementById('ecoCuteCapacity').value,
+                    v2hManufacturer: document.getElementById('v2hManufacturer').value,
+                    ihManufacturer: document.getElementById('ihManufacturer').value,
+                    hemsManufacturer,
+                    // ★ 延長保証
+                    hasExtendedWarranty: document.getElementById('hasExtendedWarranty').checked,
+                    makerWarranty: document.getElementById('makerWarranty').value,
+                    warrantyExtension: document.getElementById('warrantyExtension').value,
+                    apStaffName: document.getElementById('apStaffName').value,
+                    clStaffName: document.getElementById('clStaffName').value,
+                    surveyDate: document.getElementById('surveyDate').value,
+                    isSurveyUndecided: document.getElementById('isSurveyUndecided').checked,
+                    constructionDate: document.getElementById('constructionDate').value,
+                    isConstructionUndecided: document.getElementById('isConstructionUndecided').checked,
+                    constructionShop: document.getElementById('constructionShop').value,
+                    notes: document.getElementById('notes').value,
+                    municipalSubsidyAreaText: getMunicipalSubsidyTexts().join('、'),
+                    isDrJissho: isDrJissho
+                };
+
+                // ファイルをBase64変換してdataに追加
+                const [contractB64, idB64, bankB64, otherB64, layoutB64, quoteB64, powerInfoB64] = await Promise.all([
+                    Promise.all(fileStore.contractFiles.map(fileToBase64)),
+                    Promise.all(fileStore.idFiles.map(fileToBase64)),
+                    Promise.all(fileStore.bankFiles.map(fileToBase64)),
+                    Promise.all(fileStore.otherFiles.map(fileToBase64)),
+                    Promise.all(fileStore.layoutFiles.map(fileToBase64)),
+                    Promise.all(fileStore.quoteFiles.map(fileToBase64)),
+                    Promise.all(fileStore.powerInfoFiles.map(fileToBase64))
+                ]);
+                data.contractFiles = contractB64;
+                data.idFiles = idB64;
+                data.bankFiles = bankB64;
+                data.otherFiles = otherB64;
+                data.layoutFiles = layoutB64;
+                data.quoteFiles = quoteB64;
+                data.powerInfoFiles = powerInfoB64;
+
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify(data),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
+
+                const result = await response.json();
+                if (result.status === 'error') throw new Error(result.message);
+                if (result.logs && result.logs.length > 0) throw new Error(result.logs.join('\n'));
+
+                const assignedIdEl = document.getElementById('assigned-id-text');
+                if (result.customerId) {
+                    assignedIdEl.textContent = '顧客ID: ' + result.customerId;
+                    assignedIdEl.classList.remove('hidden');
+                } else {
+                    assignedIdEl.classList.add('hidden');
+                }
+
+                document.getElementById('contract-form').classList.add('hidden');
+                document.getElementById('success-view').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            } catch (error) {
+                console.error(error);
+                errorText.textContent = '送信エラー: ' + error.message;
+                errorMessageDiv.classList.remove('hidden');
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                btnText.textContent = "契約を確定・報告する";
+                btnLoading.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
