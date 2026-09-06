@@ -24,12 +24,13 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}    # RSのFTPパスワード
           port: 21
           protocol: ftp                            # SFTPしか使えない場合は別方式が必要（下記README参照）
+          log-level: verbose                       # 失敗時に試行パスを詳細出力（原因特定用）
 
           # --- アップロード元 / 先 ---
           local-dir: ./                            # リポジトリ直下（index.html）
-          # ↓ サーバー上の公開ディレクトリ。unfinished-llc.com/smilesolar-cs/ に出す想定。
-          #    実際のパスはRSの構成に依存するため、Secret で指定します（末尾スラッシュ必須）。
-          server-dir: ${{ secrets.FTP_SERVER_DIR }}  # 例: /public_html/smilesolar-cs/
+          # ↓ FTPログイン直後の着地（公開領域）からの相対パス。
+          #    unfinished-llc.com/smilesolar-cs/ で開ける想定。405/553時はこのパスを調整。
+          server-dir: ./smilesolar-cs/
 
           # --- アップロードしないもの（フォーム以外はサーバーに置かない）---
           exclude: |
