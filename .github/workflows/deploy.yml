@@ -28,9 +28,9 @@ jobs:
 
           # --- アップロード元 / 先 ---
           local-dir: ./                            # リポジトリ直下（index.html）
-          # ↓ FTPログイン直後の着地（公開領域）からの相対パス。
-          #    unfinished-llc.com/smilesolar-cs/ で開ける想定。405/553時はこのパスを調整。
-          server-dir: ./smilesolar-cs/
+          # ↓ FTP着地=public_html/ 。データは「ドメイン名フォルダ」配下に置くルールのため
+          #    unfinished-llc.com/ の中の smilesolar-cs/ を指定 → 公開URL: unfinished-llc.com/smilesolar-cs/
+          server-dir: ./unfinished-llc.com/smilesolar-cs/
 
           # --- アップロードしないもの（フォーム以外はサーバーに置かない）---
           exclude: |
