@@ -105,7 +105,8 @@
                         <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
                             <div class="sm:col-span-1">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">郵便番号</label>
-                                <input type="text" id="postalCode" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="123-4567">
+                                <input type="text" id="postalCode" inputmode="numeric" maxlength="8" oninput="onPostalInput()" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="1234567（ハイフンなし）">
+                                <p id="postalHint" class="text-xs text-slate-500 mt-1 hidden"></p>
                             </div>
                             <div class="sm:col-span-1">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">都道府県 <span class="text-red-500">*</span></label>
@@ -514,6 +515,17 @@
                                 <input type="file" class="hidden" accept="image/*,.pdf" multiple onchange="addFiles(this, 'powerInfoFiles', 'powerInfoFileList', '電力情報')">
                             </label>
                         </div>
+
+                        <!-- DR委任状 -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-slate-700">DR委任状</label>
+                            <div id="drProxyFileList" class="space-y-2"></div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border border-dashed border-slate-400 bg-white hover:bg-slate-50 text-sm text-slate-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                ファイルを追加
+                                <input type="file" class="hidden" accept="image/*,.pdf" multiple onchange="addFiles(this, 'drProxyFiles', 'drProxyFileList', 'DR委任状')">
+                            </label>
+                        </div>
                     </div>
 
                     <!-- 担当・施工情報 -->
@@ -692,9 +704,52 @@
         };
 
         // =========================================================
+        // 郵便番号（ハイフンなし7桁）→ 住所 自動入力
+        // 外部API（zipcloud）を利用。7桁入力時のみ検索し、都道府県を選択・
+        // 住所欄が空のときだけ市区町村以下を補完する（既存入力は上書きしない）。
+        // 通信失敗・該当なしの場合は何もせず手入力を維持。
+        // =========================================================
+        async function onPostalInput() {
+            const input = document.getElementById('postalCode');
+            const hint = document.getElementById('postalHint');
+            // 数字以外を除去（ハイフンなし7桁運用に正規化）
+            const digits = (input.value || '').replace(/[^0-9]/g, '').slice(0, 7);
+            input.value = digits;
+            if (hint) { hint.classList.add('hidden'); hint.textContent = ''; }
+            if (digits.length !== 7) return;
+
+            if (hint) { hint.textContent = '住所を検索中...'; hint.classList.remove('hidden'); }
+            try {
+                const res = await fetch('https://zipcloud.ibsnet.co.jp/api/search?zipcode=' + digits);
+                const json = await res.json();
+                if (json && json.status === 200 && Array.isArray(json.results) && json.results.length > 0) {
+                    const r = json.results[0];
+                    // 都道府県：選択肢と完全一致する場合のみセット
+                    const pref = document.getElementById('prefecture');
+                    if (pref && r.address1 && Array.from(pref.options).some(o => o.value === r.address1)) {
+                        pref.value = r.address1;
+                    }
+                    // 住所（市区町村以下）：未入力のときのみ補完（既存入力を上書きしない）
+                    const addr = document.getElementById('address');
+                    const town = (r.address2 || '') + (r.address3 || '');
+                    if (addr && !addr.value.trim() && town) {
+                        addr.value = town;
+                    }
+                    if (hint) { hint.classList.add('hidden'); hint.textContent = ''; }
+                } else if (hint) {
+                    hint.textContent = '該当する住所が見つかりませんでした。手入力してください。';
+                    hint.classList.remove('hidden');
+                }
+            } catch (e) {
+                // 通信失敗時は自動入力をスキップ（手入力を維持）
+                if (hint) { hint.classList.add('hidden'); hint.textContent = ''; }
+            }
+        }
+
+        // =========================================================
         // ファイル管理
         // =========================================================
-        const fileStore = { contractFiles: [], idFiles: [], bankFiles: [], otherFiles: [], layoutFiles: [], quoteFiles: [], powerInfoFiles: [] };
+        const fileStore = { contractFiles: [], idFiles: [], bankFiles: [], otherFiles: [], layoutFiles: [], quoteFiles: [], powerInfoFiles: [], drProxyFiles: [] };
 
         function addFiles(input, storeKey, listId, label) {
             const files = Array.from(input.files);
@@ -1216,14 +1271,15 @@
                 };
 
                 // ファイルをBase64変換してdataに追加
-                const [contractB64, idB64, bankB64, otherB64, layoutB64, quoteB64, powerInfoB64] = await Promise.all([
+                const [contractB64, idB64, bankB64, otherB64, layoutB64, quoteB64, powerInfoB64, drProxyB64] = await Promise.all([
                     Promise.all(fileStore.contractFiles.map(fileToBase64)),
                     Promise.all(fileStore.idFiles.map(fileToBase64)),
                     Promise.all(fileStore.bankFiles.map(fileToBase64)),
                     Promise.all(fileStore.otherFiles.map(fileToBase64)),
                     Promise.all(fileStore.layoutFiles.map(fileToBase64)),
                     Promise.all(fileStore.quoteFiles.map(fileToBase64)),
-                    Promise.all(fileStore.powerInfoFiles.map(fileToBase64))
+                    Promise.all(fileStore.powerInfoFiles.map(fileToBase64)),
+                    Promise.all(fileStore.drProxyFiles.map(fileToBase64))
                 ]);
                 data.contractFiles = contractB64;
                 data.idFiles = idB64;
@@ -1232,6 +1288,7 @@
                 data.layoutFiles = layoutB64;
                 data.quoteFiles = quoteB64;
                 data.powerInfoFiles = powerInfoB64;
+                data.drProxyFiles = drProxyB64;
 
                 const response = await fetch(GAS_WEB_APP_URL, {
                     method: "POST",
