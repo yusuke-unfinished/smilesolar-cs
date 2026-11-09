@@ -37,13 +37,21 @@
     <div class="min-h-screen py-10 px-4 sm:px-6 lg:px-8">
         <div class="max-w-3xl mx-auto">
             
-            <div class="text-center mb-8">
+            <div class="text-center mb-6">
                 <div class="flex justify-center mb-4">
                     <div class="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-full shadow-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
                     </div>
                 </div>
-                <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">契約者登録フォーム</h2>
+                <h2 id="page-title" class="text-3xl font-extrabold text-slate-900 tracking-tight">アポ登録フォーム</h2>
+            </div>
+
+            <!-- モード切替（アポ登録 / 契約者登録）。切替は再読込せず入力途中を保持 -->
+            <div id="mode-switch" class="flex justify-center mb-8">
+                <div class="inline-flex bg-slate-200 rounded-full p-1 shadow-inner">
+                    <button type="button" id="tab-appt" onclick="setMode('appointment')" class="px-6 py-2 text-sm font-bold rounded-full transition-colors bg-white text-blue-700 shadow">アポ登録</button>
+                    <button type="button" id="tab-contract" onclick="setMode('contract')" class="px-6 py-2 text-sm font-bold rounded-full transition-colors text-slate-600">契約者登録</button>
+                </div>
             </div>
 
             <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-slate-200">
@@ -53,13 +61,169 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     </div>
                     <h3 class="text-2xl font-bold text-slate-900 mb-2">登録完了！</h3>
-                    <p id="assigned-id-text" class="hidden text-lg font-bold text-blue-700 mb-2"></p>
-                    <p class="text-slate-600 mb-8 max-w-md mx-auto">Kintoneへの登録とLINE通知が完了しました。</p>
-                    <button onclick="location.reload()" class="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-sm font-bold rounded-full text-white bg-blue-600 hover:bg-blue-700 transition-colors">続けて入力する</button>
+                    <p id="assigned-id-text" class="hidden text-lg font-bold text-blue-700 mb-1"></p>
+                    <p id="assigned-case-text" class="hidden text-base font-bold text-indigo-700 mb-2"></p>
+                    <p id="success-msg" class="text-slate-600 mb-8 max-w-md mx-auto"></p>
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                        <button type="button" id="to-contract-btn" onclick="proceedToContractFromAppt()" class="hidden w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-sm font-bold rounded-full text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">この案件で契約者登録へ進む</button>
+                        <button type="button" onclick="resetAfterSuccess()" class="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-slate-300 shadow-sm text-sm font-bold rounded-full text-slate-700 bg-white hover:bg-slate-50 transition-colors">続けて入力する</button>
+                    </div>
                 </div>
 
-                <form id="contract-form" class="divide-y divide-slate-100" onsubmit="handleSubmit(event)">
-                    
+                <!-- ========================= アポ登録フォーム ========================= -->
+                <form id="appt-form" class="divide-y divide-slate-100" onsubmit="handleApptSubmit(event)">
+                    <div class="p-6 sm:p-8 space-y-6">
+                        <h3 class="text-lg font-bold text-slate-900 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            お客様情報
+                        </h3>
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">お客様名 <span class="text-red-500">*</span></label>
+                                <input type="text" id="apptName" required class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="例：山田 太郎">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">フリガナ</label>
+                                <input type="text" id="apptFurigana" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="例：ヤマダ タロウ">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">電話番号 <span class="text-red-500">*</span></label>
+                                <input type="tel" id="apptPhone" required inputmode="numeric" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="09012345678（ハイフンなし）">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">メールアドレス</label>
+                                <input type="email" id="apptEmail" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="example@email.com">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                            <div class="sm:col-span-1">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">郵便番号</label>
+                                <input type="text" id="apptPostal" inputmode="numeric" maxlength="8" oninput="onApptPostalInput()" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="1234567（ハイフンなし）">
+                                <p id="apptPostalHint" class="text-xs text-slate-500 mt-1 hidden"></p>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">都道府県</label>
+                                <select id="apptPref" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border"><option value="">選択してください</option></select>
+                            </div>
+                            <div class="sm:col-span-3">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">住所（市区町村以下）</label>
+                                <input type="text" id="apptAddress" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="例：千代田区丸の内1-1-1 〇〇マンション101">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 sm:p-8 space-y-6 bg-slate-50">
+                        <h3 class="text-lg font-bold text-slate-900 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-indigo-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+                            アポ情報
+                        </h3>
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">アポ獲得担当者 <span class="text-red-500">*</span></label>
+                                <input type="text" id="apptAcqStaff" required class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="担当者名">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">流入経路 <span class="text-red-500">*</span></label>
+                                <select id="apptRoute" required class="block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm h-12">
+                                    <option value="">選択してください</option>
+                                    <option value="チラシ">チラシ（001）</option>
+                                    <option value="反響">反響（002）</option>
+                                    <option value="紹介">紹介（003）</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">商談担当者</label>
+                                <input type="text" id="apptDealStaff" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="クローザー名など">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">日程区分 <span class="text-red-500">*</span></label>
+                                <div class="flex gap-4 h-12 items-center">
+                                    <label class="inline-flex items-center gap-1 text-sm cursor-pointer"><input type="radio" name="apptSchedule" value="未定" checked class="h-4 w-4 text-indigo-600"> 未定</label>
+                                    <label class="inline-flex items-center gap-1 text-sm cursor-pointer"><input type="radio" name="apptSchedule" value="予定" class="h-4 w-4 text-indigo-600"> 予定</label>
+                                    <label class="inline-flex items-center gap-1 text-sm cursor-pointer"><input type="radio" name="apptSchedule" value="確定" class="h-4 w-4 text-indigo-600"> 確定</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">アポ日（JST・任意）</label>
+                                <input type="date" id="apptDate" class="block w-full border-slate-300 rounded-md shadow-sm border py-2 px-3 h-12">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">アポ時刻（JST・任意）</label>
+                                <input type="time" id="apptTime" class="block w-full border-slate-300 rounded-md shadow-sm border py-2 px-3 h-12">
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 -mt-2">※ 日付を入れても自動的に「確定」にはなりません。日程区分で明示してください。</p>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">備考</label>
+                            <textarea id="apptNotes" rows="3" class="shadow-sm block w-full sm:text-sm border border-slate-300 rounded-md p-3" placeholder="連絡事項があれば入力してください"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="p-6 sm:p-8 space-y-4">
+                        <h3 class="text-sm font-bold text-slate-700 flex items-center">再アポ（任意）</h3>
+                        <p class="text-xs text-slate-500">既存のお客様の再アポのときだけ入力します。空欄なら新規顧客として新しい顧客ID・案件IDを発行します。</p>
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">既存の顧客ID（同じ顧客の別案件）</label>
+                                <input type="text" id="apptExistingCustomerId" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="例：001-00001">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">既存の案件ID（同じ商談の追加アポ）</label>
+                                <input type="text" id="apptExistingCaseId" class="block w-full border-slate-300 rounded-md shadow-sm py-3 px-3 border" placeholder="例：001-00001_01">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="appt-error-message" class="hidden p-4 bg-red-50">
+                        <div class="flex"><div class="ml-3"><h3 class="text-sm font-medium text-red-800">エラー</h3><div id="appt-error-text" class="mt-2 text-sm text-red-700"></div></div></div>
+                    </div>
+
+                    <div class="px-6 py-8 bg-slate-50 sm:px-10 flex justify-end rounded-b-2xl">
+                        <button type="submit" id="appt-submit-btn" class="w-full sm:w-auto inline-flex justify-center items-center py-4 px-12 border border-transparent shadow-lg text-lg font-bold rounded-full text-white bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all">
+                            <span id="appt-btn-text">アポを登録する</span>
+                            <div id="appt-btn-loading" class="hidden spinner ml-2"></div>
+                        </button>
+                    </div>
+                </form>
+
+                <form id="contract-form" class="hidden divide-y divide-slate-100" onsubmit="handleSubmit(event)">
+
+                    <!-- アポ案件の引き継ぎ -->
+                    <div class="p-6 sm:p-8 space-y-4 bg-indigo-50/60">
+                        <div id="carry-banner" class="hidden flex items-center justify-between gap-3 p-3 rounded-md bg-indigo-100 border border-indigo-200">
+                            <p class="text-sm text-indigo-900">案件 <span id="carry-case-label" class="font-bold"></span> を引き継ぎ中（顧客IDは再発行されません）</p>
+                            <button type="button" onclick="clearCarry()" class="text-xs text-indigo-700 underline whitespace-nowrap">引き継ぎ解除</button>
+                        </div>
+
+                        <!-- 氏名で登録済みアポを検索（パスコード必須） -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">登録済みアポを氏名で検索</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <input type="password" id="searchPasscode" autocomplete="off" oninput="onSearchInput()" class="block w-full border-slate-300 rounded-md shadow-sm py-2 px-3 border sm:col-span-1" placeholder="検索パスコード">
+                                <div class="relative sm:col-span-2">
+                                    <input type="text" id="searchName" autocomplete="off" oninput="onSearchInput()" class="block w-full border-slate-300 rounded-md shadow-sm py-2 px-3 border" placeholder="お客様名／フリガナ（2文字以上）">
+                                    <div id="searchResults" class="hidden absolute z-20 left-0 right-0 mt-1 max-h-72 overflow-y-auto bg-white border border-slate-300 rounded-md shadow-lg"></div>
+                                </div>
+                            </div>
+                            <p id="searchHint" class="text-xs text-slate-500 mt-1">パスコードを入れて氏名を入力すると候補が出ます。候補を選ぶと情報を引き継ぎます（顧客ID・案件IDは再発行されません）。</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">案件IDで引き継ぐ（IDが分かる場合）</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="carryCaseIdInput" class="block w-full border-slate-300 rounded-md shadow-sm py-2 px-3 border" placeholder="例：001-00001_01">
+                                <button type="button" onclick="loadCaseById()" class="whitespace-nowrap px-4 py-2 rounded-md bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700">引き継ぐ</button>
+                            </div>
+                            <p id="carryCaseHint" class="text-xs text-slate-500 mt-1">アポ完了画面から「この案件で契約者登録へ進む」を押すと自動で引き継がれます。別の案件はここに案件IDを入力してください。</p>
+                        </div>
+                    </div>
+
                     <!-- お客様情報 -->
                     <div class="p-6 sm:p-8 space-y-6">
                         <h3 class="text-lg font-bold text-slate-900 flex items-center">
@@ -689,8 +853,20 @@
         // 既存の関数
         // =========================================================
         window.onload = function() {
-            const today = new Date().toISOString().split('T')[0];
+            // 契約日の既定値（JSTの今日）
+            const today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().split('T')[0];
             document.getElementById('contractDate').value = today;
+
+            // アポフォームの都道府県を契約フォームの選択肢から複製（重複定義を避ける）
+            const srcPref = document.getElementById('prefecture');
+            const dstPref = document.getElementById('apptPref');
+            if (srcPref && dstPref && dstPref.options.length <= 1) {
+                Array.from(srcPref.options).forEach(o => {
+                    if (o.value === '') return; // プレースホルダは既にある
+                    dstPref.appendChild(new Option(o.text, o.value));
+                });
+            }
+
             updateCustomerIdField(); // 初期表示（読み込み中の状態を表示）
             if (!GAS_WEB_APP_URL.includes("ここにGAS")) loadFormData(); // URL設定後のみ顧客リスト・次番号を取得
 
@@ -701,6 +877,11 @@
                     if (box) box.classList.add('hidden');
                 }, 200);
             });
+
+            // 初期モード（既定はアポ登録。切替は再読込せず入力途中を保持）
+            let mode = 'appointment';
+            try { mode = sessionStorage.getItem('formMode') || 'appointment'; } catch (e) {}
+            setMode(mode);
         };
 
         // =========================================================
@@ -709,9 +890,10 @@
         // 住所欄が空のときだけ市区町村以下を補完する（既存入力は上書きしない）。
         // 通信失敗・該当なしの場合は何もせず手入力を維持。
         // =========================================================
-        async function onPostalInput() {
-            const input = document.getElementById('postalCode');
-            const hint = document.getElementById('postalHint');
+        // 郵便番号→住所 自動入力（契約フォーム / アポフォーム 共通ロジック）
+        async function lookupAddress(postalId, prefId, addrId, hintId) {
+            const input = document.getElementById(postalId);
+            const hint = hintId ? document.getElementById(hintId) : null;
             // 数字以外を除去（ハイフンなし7桁運用に正規化）
             const digits = (input.value || '').replace(/[^0-9]/g, '').slice(0, 7);
             input.value = digits;
@@ -725,12 +907,12 @@
                 if (json && json.status === 200 && Array.isArray(json.results) && json.results.length > 0) {
                     const r = json.results[0];
                     // 都道府県：選択肢と完全一致する場合のみセット
-                    const pref = document.getElementById('prefecture');
+                    const pref = document.getElementById(prefId);
                     if (pref && r.address1 && Array.from(pref.options).some(o => o.value === r.address1)) {
                         pref.value = r.address1;
                     }
                     // 住所（市区町村以下）：未入力のときのみ補完（既存入力を上書きしない）
-                    const addr = document.getElementById('address');
+                    const addr = document.getElementById(addrId);
                     const town = (r.address2 || '') + (r.address3 || '');
                     if (addr && !addr.value.trim() && town) {
                         addr.value = town;
@@ -745,6 +927,8 @@
                 if (hint) { hint.classList.add('hidden'); hint.textContent = ''; }
             }
         }
+        function onPostalInput() { return lookupAddress('postalCode', 'prefecture', 'address', 'postalHint'); }
+        function onApptPostalInput() { return lookupAddress('apptPostal', 'apptPref', 'apptAddress', 'apptPostalHint'); }
 
         // =========================================================
         // ファイル管理
@@ -1026,6 +1210,16 @@
             const hint = document.getElementById('customerIdHint');
             const required = document.getElementById('customerIdRequired');
 
+            // アポから引き継ぎ中は、引き継いだ顧客IDを固定表示（再採番しない）
+            if (carriedCustomerId) {
+                input.readOnly = true;
+                input.classList.add('bg-slate-100', 'cursor-not-allowed');
+                input.value = carriedCustomerId;
+                required.classList.add('hidden');
+                hint.textContent = 'アポから引き継いだ顧客ID（再発行されません）。';
+                return;
+            }
+
             // 種別が変わったら選択と候補リストをリセット
             selectedCustomerId = '';
             const resultsBox = document.getElementById('customerIdResults');
@@ -1224,6 +1418,10 @@
                 }
 
                 const data = {
+                    formType: 'contract',
+                    submissionId: contractSubmissionId,
+                    carriedCustomerId: carriedCustomerId || '',
+                    carriedCaseId: carriedCaseId || '',
                     contractType: document.getElementById('contractType').value,
                     contractDate: document.getElementById('contractDate').value,
                     contractorName: document.getElementById('contractorName').value,
@@ -1300,17 +1498,14 @@
                 if (result.status === 'error') throw new Error(result.message);
                 if (result.logs && result.logs.length > 0) throw new Error(result.logs.join('\n'));
 
-                const assignedIdEl = document.getElementById('assigned-id-text');
-                if (result.customerId) {
-                    assignedIdEl.textContent = '顧客ID: ' + result.customerId;
-                    assignedIdEl.classList.remove('hidden');
-                } else {
-                    assignedIdEl.classList.add('hidden');
-                }
-
-                document.getElementById('contract-form').classList.add('hidden');
-                document.getElementById('success-view').classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                showSuccess({
+                    customerId: result.customerId,
+                    caseId: result.caseId,
+                    message: '契約情報をスプレッドシートに登録し、Googleドライブに書類を保存しました。',
+                    carryCase: null
+                });
+                contractSubmissionId = genSubmissionId(); // 次回送信用に更新
+                clearCarry();
 
             } catch (error) {
                 console.error(error);
@@ -1321,6 +1516,272 @@
                 btnText.textContent = "契約を確定・報告する";
                 btnLoading.classList.add('hidden');
             }
+        }
+
+        // =========================================================
+        // モード切替・アポ登録・引き継ぎ・冪等ID（追加分）
+        // =========================================================
+        let carriedCustomerId = '';
+        let carriedCaseId = '';
+        let pendingCarryCase = null;              // アポ完了直後に「契約へ進む」で使う案件データ
+        function genSubmissionId() {
+            try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+            return 'sid-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+        }
+        let apptSubmissionId = genSubmissionId();
+        let contractSubmissionId = genSubmissionId();
+
+        function setMode(mode) {
+            const isAppt = (mode === 'appointment');
+            document.getElementById('appt-form').classList.toggle('hidden', !isAppt);
+            document.getElementById('contract-form').classList.toggle('hidden', isAppt);
+            document.getElementById('page-title').textContent = isAppt ? 'アポ登録フォーム' : '契約者登録フォーム';
+            // タブの見た目
+            const ta = document.getElementById('tab-appt'), tc = document.getElementById('tab-contract');
+            ta.className = 'px-6 py-2 text-sm font-bold rounded-full transition-colors ' + (isAppt ? 'bg-white text-blue-700 shadow' : 'text-slate-600');
+            tc.className = 'px-6 py-2 text-sm font-bold rounded-full transition-colors ' + (isAppt ? 'text-slate-600' : 'bg-white text-blue-700 shadow');
+            try { sessionStorage.setItem('formMode', mode); } catch (e) {}
+        }
+
+        // --- アポ登録送信 ---
+        async function handleApptSubmit(event) {
+            event.preventDefault();
+            const btn = document.getElementById('appt-submit-btn');
+            const btnText = document.getElementById('appt-btn-text');
+            const btnLoading = document.getElementById('appt-btn-loading');
+            const errBox = document.getElementById('appt-error-message');
+            const errText = document.getElementById('appt-error-text');
+            errBox.classList.add('hidden');
+
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('ここにGAS')) { alert('GASのURLを設定してください。'); return; }
+
+            const val = id => (document.getElementById(id).value || '').trim();
+            const name = val('apptName');
+            const phone = (val('apptPhone')).replace(/[^0-9]/g, '');
+            const acqStaff = val('apptAcqStaff');
+            const route = val('apptRoute');
+            const scheduleEl = document.querySelector('input[name="apptSchedule"]:checked');
+            const scheduleType = scheduleEl ? scheduleEl.value : '未定';
+
+            const errors = [];
+            if (!name) errors.push('「お客様名」を入力してください。');
+            if (!phone) errors.push('「電話番号」を入力してください。');
+            if (!acqStaff) errors.push('「アポ獲得担当者」を入力してください。');
+            if (!route) errors.push('「流入経路」を選択してください。');
+            if (errors.length) {
+                errText.innerHTML = errors.map(e => '・' + e).join('<br>');
+                errBox.classList.remove('hidden');
+                errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            btn.disabled = true; btn.classList.add('opacity-70', 'cursor-not-allowed');
+            btnText.textContent = '送信中...'; btnLoading.classList.remove('hidden');
+
+            const data = {
+                formType: 'appointment',
+                submissionId: apptSubmissionId,
+                name, furigana: val('apptFurigana'), phone, email: val('apptEmail'),
+                postalCode: val('apptPostal'), prefecture: val('apptPref'), address: val('apptAddress'),
+                acqStaff, route, dealStaff: val('apptDealStaff'),
+                apptDate: val('apptDate'), apptTime: val('apptTime'), scheduleType,
+                notes: val('apptNotes'),
+                existingCustomerId: val('apptExistingCustomerId'),
+                existingCaseId: val('apptExistingCaseId')
+            };
+
+            try {
+                const res = await fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+                const result = await res.json();
+                if (result.status !== 'success') throw new Error(result.message || '登録に失敗しました。');
+
+                // 契約へ引き継ぐための案件データ（この場で保持）
+                const carryCase = {
+                    customerId: result.customerId, caseId: result.caseId,
+                    name, furigana: val('apptFurigana'), phone, email: val('apptEmail'),
+                    postalCode: val('apptPostal'), prefecture: val('apptPref'), address: val('apptAddress'),
+                    acqStaff, route, dealStaff: val('apptDealStaff')
+                };
+                showSuccess({
+                    customerId: result.customerId, caseId: result.caseId,
+                    message: 'アポ情報をスプレッドシート（アポ一覧）に登録しました。',
+                    carryCase: carryCase
+                });
+                apptSubmissionId = genSubmissionId(); // 次回送信用に更新
+            } catch (error) {
+                console.error(error);
+                errText.textContent = '送信エラー: ' + error.message;
+                errBox.classList.remove('hidden');
+            } finally {
+                btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                btnText.textContent = 'アポを登録する'; btnLoading.classList.add('hidden');
+            }
+        }
+
+        // --- 完了画面（実際に成功した処理のみ表示）---
+        function showSuccess(opts) {
+            const idEl = document.getElementById('assigned-id-text');
+            const caseEl = document.getElementById('assigned-case-text');
+            const msgEl = document.getElementById('success-msg');
+            const toBtn = document.getElementById('to-contract-btn');
+            if (opts.customerId) { idEl.textContent = '顧客ID: ' + opts.customerId; idEl.classList.remove('hidden'); } else { idEl.classList.add('hidden'); }
+            if (opts.caseId) { caseEl.textContent = '案件ID: ' + opts.caseId; caseEl.classList.remove('hidden'); } else { caseEl.classList.add('hidden'); }
+            msgEl.textContent = opts.message || '';
+
+            pendingCarryCase = opts.carryCase || null;
+            toBtn.classList.toggle('hidden', !pendingCarryCase);
+
+            document.getElementById('appt-form').classList.add('hidden');
+            document.getElementById('contract-form').classList.add('hidden');
+            document.getElementById('mode-switch').classList.add('hidden');
+            document.getElementById('success-view').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetAfterSuccess() {
+            // 「続けて入力」は新規入力のためフォームを初期化（タブ切替での保持とは別）
+            const af = document.getElementById('appt-form'); if (af) af.reset();
+            const cf = document.getElementById('contract-form'); if (cf) cf.reset();
+            // 添付の内部状態とリスト表示をクリア
+            Object.keys(fileStore).forEach(k => { fileStore[k] = []; });
+            ['contractFileList','idFileList','bankFileList','otherFileList','layoutFileList','quoteFileList','powerInfoFileList','drProxyFileList']
+                .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+            clearCarry();
+            // 既定値の再適用
+            document.getElementById('contractDate').value = new Date(Date.now() + 9 * 3600 * 1000).toISOString().split('T')[0];
+            updateCustomerIdField();
+
+            document.getElementById('success-view').classList.add('hidden');
+            document.getElementById('mode-switch').classList.remove('hidden');
+            let mode = 'appointment';
+            try { mode = sessionStorage.getItem('formMode') || 'appointment'; } catch (e) {}
+            setMode(mode);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- アポ完了→契約へ引き継ぎ（同セッション・サーバ不要）---
+        function proceedToContractFromAppt() {
+            if (pendingCarryCase) prefillContractFromCase(pendingCarryCase);
+            document.getElementById('success-view').classList.add('hidden');
+            document.getElementById('mode-switch').classList.remove('hidden');
+            setMode('contract');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- 案件ID単一取得→反映（案件ID入力・候補選択の共通処理）---
+        async function fetchCaseAndPrefill(caseId, hintEl) {
+            if (!caseId) return false;
+            if (hintEl) hintEl.textContent = '案件を照会中...';
+            try {
+                const url = GAS_WEB_APP_URL + '?action=getCase&caseId=' + encodeURIComponent(caseId);
+                const res = await fetch(url);
+                const result = await res.json();
+                if (result.status === 'success' && result.case) {
+                    prefillContractFromCase(result.case);
+                    if (hintEl) hintEl.textContent = '案件 ' + result.case.caseId + ' を引き継ぎました。';
+                    return true;
+                }
+                if (hintEl) hintEl.textContent = '該当する案件が見つかりませんでした。';
+                return false;
+            } catch (e) {
+                if (hintEl) hintEl.textContent = '照会に失敗しました。時間をおいて再度お試しください。';
+                return false;
+            }
+        }
+        async function loadCaseById() {
+            const caseId = (document.getElementById('carryCaseIdInput').value || '').trim();
+            const hint = document.getElementById('carryCaseHint');
+            if (!caseId) { hint.textContent = '案件IDを入力してください。'; return; }
+            await fetchCaseAndPrefill(caseId, hint);
+        }
+
+        // --- 氏名検索（パスコード必須・POST。氏名はURLに載せない）---
+        let _searchTimer = null;
+        function onSearchInput() {
+            clearTimeout(_searchTimer);
+            _searchTimer = setTimeout(doNameSearch, 300); // デバウンス
+        }
+        async function doNameSearch() {
+            const passcode = document.getElementById('searchPasscode').value || '';
+            const q = (document.getElementById('searchName').value || '').trim();
+            const hint = document.getElementById('searchHint');
+            const box = document.getElementById('searchResults');
+            box.classList.add('hidden'); box.innerHTML = '';
+            if (q.length < 2) { hint.textContent = '氏名は2文字以上で入力してください。'; return; }
+            if (!passcode) { hint.textContent = '検索パスコードを入力してください。'; return; }
+            hint.textContent = '検索中...';
+            try {
+                const res = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'searchByName', passcode: passcode, q: q }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+                const result = await res.json();
+                if (result.status !== 'success') { hint.textContent = result.message || '検索できませんでした。'; return; }
+                renderCandidates(result.candidates || [], result.truncated);
+            } catch (e) {
+                hint.textContent = '検索に失敗しました。時間をおいて再度お試しください。';
+            }
+        }
+        function renderCandidates(list, truncated) {
+            const box = document.getElementById('searchResults');
+            const hint = document.getElementById('searchHint');
+            box.innerHTML = '';
+            if (!list.length) { hint.textContent = '該当するアポが見つかりませんでした。'; box.classList.add('hidden'); return; }
+            hint.textContent = list.length + '件' + (truncated ? '以上' : '') + 'の候補。選択すると引き継ぎます。';
+            list.forEach(c => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'block w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-100';
+                const nm = document.createElement('div');
+                nm.className = 'font-bold text-slate-800';
+                nm.textContent = (c.name || '(無名)') + (c.furigana ? '（' + c.furigana + '）' : '');
+                const meta = document.createElement('div');
+                meta.className = 'text-xs text-slate-500';
+                meta.textContent = [c.status, c.caseId, (c.phoneLast4 ? 'TEL下4桁 ' + c.phoneLast4 : ''), (c.apptDate ? 'アポ日 ' + c.apptDate : '')].filter(Boolean).join('　');
+                btn.appendChild(nm); btn.appendChild(meta);
+                btn.addEventListener('click', () => selectCandidate(c.caseId));
+                box.appendChild(btn);
+            });
+            box.classList.remove('hidden');
+        }
+        async function selectCandidate(caseId) {
+            document.getElementById('searchResults').classList.add('hidden');
+            await fetchCaseAndPrefill(caseId, document.getElementById('searchHint'));
+        }
+
+        // --- 契約フォームに案件データを反映（顧客ID・案件IDは再発行しない）---
+        function prefillContractFromCase(c) {
+            carriedCustomerId = c.customerId || '';
+            carriedCaseId = c.caseId || '';
+            const set = (id, v) => { const el = document.getElementById(id); if (el && v != null && v !== '') el.value = v; };
+            set('contractorName', c.name);
+            set('furigana', c.furigana);
+            set('phone', c.phone);
+            set('email', c.email);
+            set('postalCode', c.postalCode);
+            if (c.prefecture) { const p = document.getElementById('prefecture'); if (p && Array.from(p.options).some(o => o.value === c.prefecture)) p.value = c.prefecture; }
+            set('address', c.address);
+            if (c.acqStaff) set('apStaffName', c.acqStaff);
+            if (c.dealStaff) set('clStaffName', c.dealStaff);
+            // 流入経路→契約種別（同じ選択肢）を引き継ぐ
+            if (c.route) { const ct = document.getElementById('contractType'); if (ct && Array.from(ct.options).some(o => o.value === c.route)) ct.value = c.route; }
+            // バナー表示＋顧客ID欄を引き継ぎ表示に
+            const banner = document.getElementById('carry-banner');
+            document.getElementById('carry-case-label').textContent = carriedCaseId + '（顧客 ' + carriedCustomerId + '）';
+            banner.classList.remove('hidden');
+            updateCustomerIdField();
+        }
+
+        function clearCarry() {
+            carriedCustomerId = '';
+            carriedCaseId = '';
+            pendingCarryCase = null;
+            const banner = document.getElementById('carry-banner');
+            if (banner) banner.classList.add('hidden');
+            const input = document.getElementById('carryCaseIdInput');
+            if (input) input.value = '';
+            if (typeof updateCustomerIdField === 'function') updateCustomerIdField();
         }
     </script>
 </body>
